@@ -4,16 +4,17 @@ SOLUTIONS := $(BENCHMARK)/solutions
 MILESTONES := $(BENCHMARK)/milestones
 CMD_MILESTONES := $(MILESTONES)/command_milestones
 STG_MILESTONES := $(MILESTONES)/stage_milestones
+DOCKER_COMPOSE := $(shell if docker compose version >/dev/null 2>&1; then echo "docker compose"; elif command -v docker-compose >/dev/null 2>&1; then echo "docker-compose"; else echo "docker compose"; fi)
 
 build:
 	$(eval DC := $(shell find benchmark -name 'docker-compose.yml' -print0 | xargs -0 -I {} echo "-f {}" | grep -v "benchmark/machines/docker-compose.yml"))
-	docker-compose -f benchmark/machines/docker-compose.yml $(DC) build
+	$(DOCKER_COMPOSE) -f benchmark/machines/docker-compose.yml $(DC) build
 
 install:build
 	setup/setup.sh
 
 test:
-	@docker-compose -f benchmark/machines/docker-compose.yml -f benchmark/machines/$(category)/$(task_type)/docker-compose.yml build
+	@$(DOCKER_COMPOSE) -f benchmark/machines/docker-compose.yml -f benchmark/machines/$(category)/$(task_type)/docker-compose.yml build
 	@python3 benchmark/tests/machine_test.py $(category) $(task_type) $(vm)
 
 create:

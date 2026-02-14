@@ -13,16 +13,15 @@ RUN mkdir /root/scripts
 RUN wget -q https://http.kali.org/pool/main/k/kali-archive-keyring/kali-archive-keyring_2025.1_all.deb \
     && dpkg -i kali-archive-keyring_2025.1_all.deb \
     && rm kali-archive-keyring_2025.1_all.deb
-RUN sed -i 's|http://http.kali.org/kali|http://kali.mirror.garr.it/mirrors/kali|g' /etc/apt/sources.list
+RUN sed -i -E 's|https?://[^ ]+/kali|https://http.kali.org/kali|g' /etc/apt/sources.list
 RUN apt-get update
 RUN apt -y install --no-install-recommends ${KALI_PKG}
 RUN apt-get remove -y hashcat-data || true
 
-RUN apt-get full-upgrade -y
-RUN apt-get purge -y vim vim-nox vim-tiny
-RUN apt-get install -y openssh-server
-RUN apt-get install -y xxd
-RUN setcap -r /usr/lib/nmap/nmap
+RUN apt-get update -o Acquire::Retries=5 -o APT::Update::Error-Mode=any \
+    && apt-get install -y --no-install-recommends -o Acquire::Retries=5 --fix-missing openssh-server xxd
+RUN apt-get purge -y vim vim-nox vim-tiny || true
+RUN if [ -e /usr/lib/nmap/nmap ]; then setcap -r /usr/lib/nmap/nmap || true; fi
 
 # Copy the adapted exploits including the flags or missing exploits
 COPY adapted_exploits/openssl_heartbleed.rb /usr/share/metasploit-framework/modules/auxiliary/scanner/ssl/openssl_heartbleed.rb
