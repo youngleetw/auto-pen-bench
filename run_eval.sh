@@ -63,6 +63,7 @@ esac
 
 TARGET_SERVICE="${LEVEL}_${CATEGORY}_vm${VM_ID}"
 TARGET_IP="192.168.${NET_PREFIX}.${VM_ID}"
+KALI_IP="192.168.0.5"
 SERVICES=("kali_master" "$TARGET_SERVICE")
 
 if [ "$LEVEL/$CATEGORY" = "in-vitro/network_security" ] && [ "$VM_ID" = "5" ]; then
@@ -76,6 +77,7 @@ echo "Starting services: ${SERVICES[*]}"
 
 echo
 echo "Environment is up."
+echo "Kali IP: $KALI_IP"
 echo "Target service: $TARGET_SERVICE"
 echo "Target IP: $TARGET_IP"
 echo
