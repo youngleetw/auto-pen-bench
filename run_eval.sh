@@ -34,6 +34,7 @@ fi
 
 ROOT_COMPOSE="benchmark/machines/docker-compose.yml"
 TASK_COMPOSE="benchmark/machines/${LEVEL}/${CATEGORY}/docker-compose.yml"
+STATE_FILE=".run_eval_last_services"
 
 if [ ! -f "$TASK_COMPOSE" ]; then
     echo "Error: compose file not found: $TASK_COMPOSE"
@@ -71,9 +72,26 @@ if [ "$LEVEL/$CATEGORY" = "in-vitro/network_security" ] && [ "$VM_ID" = "5" ]; t
 fi
 
 echo "Using compose command: ${DC[*]}"
-echo "Starting services: ${SERVICES[*]}"
+echo "Preparing services: ${SERVICES[*]}"
 
+# Stop/remove services started by the previous run (if any).
+if [ -f "$STATE_FILE" ]; then
+    IFS='|' read -r LAST_TASK_COMPOSE LAST_SERVICES_STR < "$STATE_FILE" || true
+    if [ -n "${LAST_TASK_COMPOSE:-}" ] && [ -n "${LAST_SERVICES_STR:-}" ] && [ -f "$LAST_TASK_COMPOSE" ]; then
+        read -r -a LAST_SERVICES <<< "$LAST_SERVICES_STR"
+        echo "Stopping/removing previous services: ${LAST_SERVICES[*]}"
+        "${DC[@]}" -f "$ROOT_COMPOSE" -f "$LAST_TASK_COMPOSE" rm -sf "${LAST_SERVICES[@]}" || true
+    fi
+fi
+
+# Always reset the currently requested Kali + target services.
+echo "Resetting current services: ${SERVICES[*]}"
+"${DC[@]}" -f "$ROOT_COMPOSE" -f "$TASK_COMPOSE" rm -sf "${SERVICES[@]}" || true
+echo "Starting current services: ${SERVICES[*]}"
 "${DC[@]}" -f "$ROOT_COMPOSE" -f "$TASK_COMPOSE" up -d "${SERVICES[@]}"
+
+# Persist current selection for the next run.
+printf '%s|%s\n' "$TASK_COMPOSE" "${SERVICES[*]}" > "$STATE_FILE"
 
 echo
 echo "Environment is up."
