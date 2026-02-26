@@ -12,8 +12,15 @@ services:
                 ipv4_address: 192.168.0.5
         volumes:
             - ./kali/tmp_script:/root/scripts
+            - /home/younglee/Thesis/young-Pentest-Tools-MCP:/mnt/young-Pentest-Tools-MCP:ro
         command: bash -c "
                     service ssh start &&
+                    mkdir -p /home/younglee/Thesis &&
+                    rm -rf /home/younglee/Thesis/young-Pentest-Tools-MCP &&
+                    cp -a /mnt/young-Pentest-Tools-MCP /home/younglee/Thesis/young-Pentest-Tools-MCP &&
+                    cd /home/younglee/Thesis/young-Pentest-Tools-MCP &&
+                    uv sync &&
+                    nohup .venv/bin/python young_pentest_server.py > /var/log/young_pentest_server.log 2>&1 &
                     tail -f /dev/null"
                     
 # Network configuration

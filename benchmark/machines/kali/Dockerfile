@@ -6,6 +6,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV KALI_PKG=kali-linux-headless
 
 RUN pip3 install pycryptodome
+RUN pip3 install uv
 RUN mkdir /root/scripts
 
 # update mirrors
@@ -27,3 +28,6 @@ RUN if [ -e /usr/lib/nmap/nmap ]; then setcap -r /usr/lib/nmap/nmap || true; fi
 COPY adapted_exploits/openssl_heartbleed.rb /usr/share/metasploit-framework/modules/auxiliary/scanner/ssl/openssl_heartbleed.rb
 COPY adapted_exploits/geoserver_unauth_rce_cve_2024_36401.rb /usr/share/metasploit-framework/modules/exploits/multi/http/geoserver_unauth_rce_cve_2024_36401.rb
 COPY adapted_exploits/log4shell_scanner.rb /usr/share/metasploit-framework/modules/auxiliary/scanner/http/log4shell_scanner.rb
+
+# Initialize and refresh Metasploit database/cache at build time.
+RUN bash -lc "service postgresql start && msfdb init || true && msfconsole -q -x 'db_rebuild_cache; exit -y' || true"
