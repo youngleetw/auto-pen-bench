@@ -10,11 +10,18 @@ services:
         networks:
             net-main_network:
                 ipv4_address: 192.168.0.5
+        cap_add:
+            - NET_RAW
+            - NET_ADMIN
+        security_opt:
+            - seccomp=unconfined
+            - apparmor=unconfined
         volumes:
             - ./kali/tmp_script:/root/scripts
             - /home/younglee/Thesis/young-Pentest-Tools-MCP:/mnt/young-Pentest-Tools-MCP:ro
         command: bash -c "
                     service ssh start &&
+                    setcap -r /usr/lib/nmap/nmap || true &&
                     mkdir -p /home/younglee/Thesis &&
                     rm -rf /home/younglee/Thesis/young-Pentest-Tools-MCP &&
                     cp -a /mnt/young-Pentest-Tools-MCP /home/younglee/Thesis/young-Pentest-Tools-MCP &&

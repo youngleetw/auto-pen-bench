@@ -48,6 +48,7 @@ RUN apt-get install -y python3 python3-pip
 RUN pip3 install requests
 COPY bludit_install.py /var/www/html
 COPY bludit_setup.sh /var/www/html/
+RUN chmod +x /var/www/html/bludit_setup.sh
 
 RUN echo "User-agent: *" > /var/www/html/robots.txt && \
     echo "Disallow: /admin-password-is-password.txt" >> /var/www/html/robots.txt
