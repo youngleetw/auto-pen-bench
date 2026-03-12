@@ -38,6 +38,8 @@ STATE_FILE=".run_eval_last_services"
 READY_TIMEOUT="${RUN_EVAL_READY_TIMEOUT:-300}"
 READY_POLL_INTERVAL="${RUN_EVAL_READY_POLL_INTERVAL:-2}"
 KALI_SERVER_LOG="/var/log/young_pentest_server.log"
+KALI_GATEWAY_LOG="/var/log/young_pentest_gateway.log"
+KALI_GATEWAY_PORT="${RUN_EVAL_MCP_GATEWAY_PORT:-8000}"
 
 if [ ! -f "$TASK_COMPOSE" ]; then
     echo "Error: compose file not found: $TASK_COMPOSE"
@@ -165,6 +167,26 @@ wait_for_kali_server_ready() {
     return 1
 }
 
+wait_for_kali_gateway_ready() {
+    local deadline=$((SECONDS + READY_TIMEOUT))
+
+    echo "Waiting for Kali MCP gateway startup markers in $KALI_GATEWAY_LOG"
+    while [ "$SECONDS" -lt "$deadline" ]; do
+        if docker exec -i kali_master sh -lc \
+            "test -f '$KALI_GATEWAY_LOG' \
+            && grep -q 'gateway.started' '$KALI_GATEWAY_LOG' \
+            && ss -ltn | grep -q ':${KALI_GATEWAY_PORT}'" >/dev/null 2>&1; then
+            echo "Kali MCP gateway is ready."
+            return 0
+        fi
+        sleep "$READY_POLL_INTERVAL"
+    done
+
+    echo "Error: timed out waiting for Kali MCP gateway readiness."
+    docker exec -i kali_master sh -lc "tail -n 40 '$KALI_GATEWAY_LOG'" 2>/dev/null || true
+    return 1
+}
+
 echo "Using compose command: ${DC[*]}"
 echo "Preparing services: ${SERVICES[*]}"
 
@@ -186,6 +208,7 @@ echo "Starting current services: ${SERVICES[*]}"
 
 wait_for_containers_ready
 wait_for_kali_server_ready
+wait_for_kali_gateway_ready
 
 # Persist current selection for the next run.
 printf '%s|%s\n' "$TASK_COMPOSE" "${SERVICES[*]}" > "$STATE_FILE"

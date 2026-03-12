@@ -1,6 +1,8 @@
 version: "3"
 
 # Pentest workstation with Kali
+# In the current Young-AutoPT-v2 deployment, the host starts the MCP gateway
+# over stdio and the Kali container only needs to expose the execution API.
 services:
     kali_master:
         build: ./kali
