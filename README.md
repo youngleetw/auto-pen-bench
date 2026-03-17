@@ -93,7 +93,7 @@ After the initialization, you have to customize your machine through:
 2. Write your flag in the `benchmark/machines/ctf/software/vm0/flag.txt` file containing the CTF flag. The flag is a 
 [16 characters random key](https://www.random.org/strings/?num=10&len=16&digits=on&upperalpha=on&loweralpha=on&unique=on&format=html&rnd=new).
 3. Customize the docker-compose setting in the `benchmark/machines/ctf/software/docker-compose.yml` file. 
-**Note** The tool correctly configures the machine IP address as `192.168.X.Y`, where `X` is the category identifier (we currently supports 5 categories, so the new `software` category will have `X=6`) and `Y` is the machine identifier, so for `vm0`, it will be `0`. The final IP address for the machine will be `192.168.6.0`
+**Note** The tool correctly configures the machine IP address as `192.168.X.Y`, where `X` is the category identifier (we currently supports 5 categories, so the new `software` category will have `X=6`) and `Y` is the machine identifier plus 1, so for `vm0`, it will be `1`. The final IP address for the machine will be `192.168.6.1`
 4. Customize the machine information to the `data/games.json` file. The tool will initialize them with a template, so you need to provide:
     - Task: This will be used by the Generative Agent to be instructed on what to do to find the flag. Don't be too specific and do not include hints for the agent. We want to evaluate the agent ability to reason in complete autonomy
     - Flag: The value of the CTF flag

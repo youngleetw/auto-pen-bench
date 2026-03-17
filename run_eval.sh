@@ -38,11 +38,19 @@ STATE_FILE=".run_eval_last_services"
 READY_TIMEOUT="${RUN_EVAL_READY_TIMEOUT:-300}"
 READY_POLL_INTERVAL="${RUN_EVAL_READY_POLL_INTERVAL:-2}"
 KALI_SERVER_LOG="/var/log/young_pentest_server.log"
+WAIT_FOR_KALI_GATEWAY="${RUN_EVAL_WAIT_FOR_KALI_GATEWAY:-0}"
 KALI_GATEWAY_LOG="/var/log/young_pentest_gateway.log"
 KALI_GATEWAY_PORT="${RUN_EVAL_MCP_GATEWAY_PORT:-8000}"
+KALI_SERVER_LOG_WATCH_CMD="docker exec -it kali_master tail -f ${KALI_SERVER_LOG}"
 
 if [ ! -f "$TASK_COMPOSE" ]; then
     echo "Error: compose file not found: $TASK_COMPOSE"
+    exit 1
+fi
+
+mapfile -t ALL_TASK_COMPOSES < <(find benchmark/machines -name 'docker-compose.yml' ! -path "$ROOT_COMPOSE" | sort)
+if [ "${#ALL_TASK_COMPOSES[@]}" -eq 0 ]; then
+    echo "Error: no task compose files were found under benchmark/machines"
     exit 1
 fi
 
@@ -68,7 +76,8 @@ case "$LEVEL/$CATEGORY" in
 esac
 
 TARGET_SERVICE="${LEVEL}_${CATEGORY}_vm${VM_ID}"
-TARGET_IP="192.168.${NET_PREFIX}.${VM_ID}"
+TARGET_HOST_OCTET="$((VM_ID + 1))"
+TARGET_IP="192.168.${NET_PREFIX}.${TARGET_HOST_OCTET}"
 KALI_IP="192.168.0.5"
 SERVICES=("kali_master" "$TARGET_SERVICE")
 READY_CONTAINERS=("kali_master" "$TARGET_SERVICE")
@@ -163,6 +172,8 @@ wait_for_kali_server_ready() {
     done
 
     echo "Error: timed out waiting for Kali server readiness."
+    echo "Inspect the Kali server log with:"
+    echo "  $KALI_SERVER_LOG_WATCH_CMD"
     docker exec -i kali_master sh -lc "tail -n 40 '$KALI_SERVER_LOG'" 2>/dev/null || true
     return 1
 }
@@ -187,28 +198,37 @@ wait_for_kali_gateway_ready() {
     return 1
 }
 
+maybe_wait_for_kali_gateway_ready() {
+    if [ "$WAIT_FOR_KALI_GATEWAY" != "1" ]; then
+        echo "Skipping Kali MCP gateway readiness check (RUN_EVAL_WAIT_FOR_KALI_GATEWAY=0)."
+        return 0
+    fi
+
+    wait_for_kali_gateway_ready
+}
+
+cleanup_benchmark_environment() {
+    local compose_args=(-f "$ROOT_COMPOSE")
+
+    for compose_file in "${ALL_TASK_COMPOSES[@]}"; do
+        compose_args+=(-f "$compose_file")
+    done
+
+    echo "Cleaning up existing benchmark containers and orphans."
+    if ! "${DC[@]}" "${compose_args[@]}" down --remove-orphans; then
+        echo "Warning: cleanup reported an error; continuing with a fresh startup attempt."
+    fi
+}
+
 echo "Using compose command: ${DC[*]}"
 echo "Preparing services: ${SERVICES[*]}"
-
-# Stop/remove services started by the previous run (if any).
-if [ -f "$STATE_FILE" ]; then
-    IFS='|' read -r LAST_TASK_COMPOSE LAST_SERVICES_STR < "$STATE_FILE" || true
-    if [ -n "${LAST_TASK_COMPOSE:-}" ] && [ -n "${LAST_SERVICES_STR:-}" ] && [ -f "$LAST_TASK_COMPOSE" ]; then
-        read -r -a LAST_SERVICES <<< "$LAST_SERVICES_STR"
-        echo "Stopping/removing previous services: ${LAST_SERVICES[*]}"
-        "${DC[@]}" -f "$ROOT_COMPOSE" -f "$LAST_TASK_COMPOSE" rm -sf "${LAST_SERVICES[@]}" || true
-    fi
-fi
-
-# Always reset the currently requested Kali + target services.
-echo "Resetting current services: ${SERVICES[*]}"
-"${DC[@]}" -f "$ROOT_COMPOSE" -f "$TASK_COMPOSE" rm -sf "${SERVICES[@]}" || true
+cleanup_benchmark_environment
 echo "Starting current services: ${SERVICES[*]}"
 "${DC[@]}" -f "$ROOT_COMPOSE" -f "$TASK_COMPOSE" up -d "${SERVICES[@]}"
 
 wait_for_containers_ready
 wait_for_kali_server_ready
-wait_for_kali_gateway_ready
+maybe_wait_for_kali_gateway_ready
 
 # Persist current selection for the next run.
 printf '%s|%s\n' "$TASK_COMPOSE" "${SERVICES[*]}" > "$STATE_FILE"

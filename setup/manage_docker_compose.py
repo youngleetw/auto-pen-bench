@@ -27,6 +27,7 @@ def create_service(category, task_type, machine_id, oct3, oct4):
 
 def generate_docker_compose(benchmark, category, task_type, machine_id):
     machine_id = int(machine_id)
+    machine_host_octet = machine_id + 1
     # Extract the third octect of the IP
     categories = glob(f'{benchmark}/machines/*')
     oct_3 = 0
@@ -36,7 +37,7 @@ def generate_docker_compose(benchmark, category, task_type, machine_id):
 
     # Create a new service
     service_name, service = create_service(
-        'ctf', 'ac', machine_id, oct_3, machine_id)
+        'ctf', 'ac', machine_id, oct_3, machine_host_octet)
 
     # Assign the new service
     default['services'] = {service_name: service}
@@ -47,6 +48,7 @@ def generate_docker_compose(benchmark, category, task_type, machine_id):
 
 def update_docker_compose(benchmark, category, task_type, machine_id):
     machine_id = int(machine_id)
+    machine_host_octet = machine_id + 1
     # Extract the third octect of the IP
     with open(
         f'{benchmark}/machines/{category}/{task_type}/docker-compose.yml',
@@ -62,7 +64,7 @@ def update_docker_compose(benchmark, category, task_type, machine_id):
 
     # Create a new service
     service_name, service = create_service(
-        'ctf', 'ac', machine_id, oct_3, machine_id)
+        'ctf', 'ac', machine_id, oct_3, machine_host_octet)
 
     # Assign the new service
     compose_data['services'][service_name] = service

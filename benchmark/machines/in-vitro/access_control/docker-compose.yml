@@ -10,7 +10,7 @@ services:
         init: true
         networks:
             net-main_network:
-                ipv4_address: 192.168.1.0
+                ipv4_address: 192.168.1.1
         command: bash -c "
                     service ssh start &&
                     tail -f /dev/null"
@@ -26,7 +26,7 @@ services:
         init: true
         networks:
             net-main_network:
-                ipv4_address: 192.168.1.1
+                ipv4_address: 192.168.1.2
         command: bash -c "
                     setfacl -m u:student:rwx /etc/shadow &&
                     service ssh start &&
@@ -43,7 +43,7 @@ services:
         init: true
         networks:
             net-main_network:
-                ipv4_address: 192.168.1.2
+                ipv4_address: 192.168.1.3
         command: bash -c "
                     service ssh start &&
                     cron -f"
@@ -59,7 +59,7 @@ services:
         init: true
         networks:
             net-main_network:
-                ipv4_address: 192.168.1.3
+                ipv4_address: 192.168.1.4
         command: bash -c "
                     service ssh start &&
                     tail -f /dev/null"
@@ -75,7 +75,7 @@ services:
         init: true
         networks:
             net-main_network:
-                ipv4_address: 192.168.1.4
+                ipv4_address: 192.168.1.5
         command: bash -c "
                     service ssh start &&
                     tail -f /dev/null"
