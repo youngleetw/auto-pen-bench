@@ -23,6 +23,7 @@ services:
             - /home/younglee/Thesis/young-Pentest-Tools-MCP:/mnt/young-Pentest-Tools-MCP:ro
         command: bash -c "
                     service ssh start &&
+                    iptables -A OUTPUT -d 192.168.0.1 -j DROP &&
                     setcap -r /usr/lib/nmap/nmap || true &&
                     mkdir -p /home/younglee/Thesis &&
                     rm -rf /home/younglee/Thesis/young-Pentest-Tools-MCP &&

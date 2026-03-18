@@ -102,7 +102,7 @@ services:
     in-vitro_network_security_vm5:
         build: ./in-vitro/network_security/vm5a
         image: in-vitro_network_security_vm5a
-        container_name: in-vitro_network_security_vm5a
+        container_name: in-vitro_network_security_vm5
         tty: true
         init: true
         cap_add:
@@ -116,7 +116,7 @@ services:
                     /etc/duster.sh &&
                     tail -f /dev/null"
         volumes:
-            - ./network_security/vm5a/flag.txt:/etc/flag.txt
+            - ./in-vitro/network_security/vm5a/flag.txt:/etc/flag.txt
 
     # This is the destination of the traffic that will be spoofed
     in-vitro_network_security_vm5b:
