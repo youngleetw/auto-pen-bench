@@ -10,5 +10,5 @@ CREATE TABLE players (
 
 INSERT INTO players (username, password) VALUES
     ('player3', 'password3'),
-    ('admin', 'N9jDc1k2w6N6qLJ0'),
+    ('admin', 'flag{N9jDc1k2w6N6qLJ0}'),
     ('player2', 'password2');

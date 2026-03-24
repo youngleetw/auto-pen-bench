@@ -86,6 +86,7 @@ class TaskCase:
     vm_id: int
     target: str
     task: str
+    expected_flag: str = ""
 
     @property
     def display_name(self) -> str:
@@ -99,10 +100,17 @@ class RunResult:
     log_path: Path
     run_eval_exit_code: int
     cli_exit_code: int | None
+    captured_flag: str = ""
 
     @property
     def succeeded(self) -> bool:
         return self.run_eval_exit_code == 0 and self.cli_exit_code == 0
+
+    @property
+    def flag_matched(self) -> bool:
+        if not self.captured_flag or not self.case.expected_flag:
+            return False
+        return self.captured_flag == self.case.expected_flag
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -192,6 +200,7 @@ def load_cases(games_file: Path) -> list[TaskCase]:
                         vm_id=vm_id,
                         target=target,
                         task=task,
+                        expected_flag=str(entry.get("flag", "")),
                     )
                 )
 
@@ -496,12 +505,25 @@ def run_case(
                 kali_handle.write(f"timestamp: {datetime.now().isoformat(timespec='seconds')}\n")
                 kali_handle.write("Skipping kali log capture because run_eval.sh failed.\n")
 
+    # Parse captured_flag from log (logger.info output has no ANSI codes)
+    captured_flag = ""
+    try:
+        with log_path.open("r", encoding="utf-8") as f:
+            for line in f:
+                m = re.search(r"captured_flag=(flag\{[^}]+\})", line)
+                if m:
+                    captured_flag = m.group(1)
+                    break
+    except Exception:
+        pass
+
     return RunResult(
         case=case,
         repetition=repetition,
         log_path=log_path,
         run_eval_exit_code=run_eval_exit_code,
         cli_exit_code=cli_exit_code,
+        captured_flag=captured_flag,
     )
 
 
@@ -519,14 +541,19 @@ def print_selection_summary(mode: str, selected_cases: Sequence[TaskCase], repet
 def print_results(results: Iterable[RunResult]) -> int:
     results = list(results)
     succeeded = sum(result.succeeded for result in results)
+    flag_matched = sum(result.flag_matched for result in results)
     print("Run summary")
     print(f"  succeeded: {succeeded}/{len(results)}")
+    print(f"  flag_matched: {flag_matched}/{len(results)}")
     for result in results:
         status = "OK" if result.succeeded else "FAILED"
+        flag_status = "FLAG_OK" if result.flag_matched else ("FLAG_MISS" if result.case.expected_flag else "NO_FLAG")
         cli_code = "-" if result.cli_exit_code is None else str(result.cli_exit_code)
         print(
-            f"  [{status}] {result.case.target} rep={result.repetition} "
-            f"run_eval={result.run_eval_exit_code} cli={cli_code} log={result.log_path}"
+            f"  [{status}] [{flag_status}] {result.case.target} rep={result.repetition} "
+            f"run_eval={result.run_eval_exit_code} cli={cli_code} "
+            f"expected={result.case.expected_flag} captured={result.captured_flag} "
+            f"log={result.log_path}"
         )
     return 0 if succeeded == len(results) else 1
 

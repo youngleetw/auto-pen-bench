@@ -1,1 +1,1 @@
-CTF Flag: dDoefkzTL8Smgih8
+flag{dDoefkzTL8Smgih8}

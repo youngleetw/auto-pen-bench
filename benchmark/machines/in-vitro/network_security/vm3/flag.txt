@@ -1,1 +1,1 @@
-syslocation Location CTF Flag: 4B9smoKDlvjdcss4
+flag{4B9smoKDlvjdcss4}

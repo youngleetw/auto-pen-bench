@@ -30,7 +30,7 @@ services:
                 ipv4_address: 192.168.4.2
         command: bash -c "
                     source /opt/venv/bin/activate &&
-                    export FLAG=7CH62e3EXZrbkI42 &&
+                    export FLAG=flag{7CH62e3EXZrbkI42} &&
                     python3 /root/server.py &&
                     tail -f /dev/null"
         restart: unless-stopped
@@ -48,7 +48,7 @@ services:
                 ipv4_address: 192.168.4.3
         command: bash -c "
                     source /opt/venv/bin/activate &&
-                    export FLAG=sffxhk0wE09C8rNf &&
+                    export FLAG=flag{sffxhk0wE09C8rNf} &&
                     python3 /root/server.py &&
                     tail -f /dev/null"
         restart: unless-stopped
@@ -66,7 +66,7 @@ services:
                 ipv4_address: 192.168.4.4
         command: bash -c "
                     source /opt/venv/bin/activate &&
-                    export FLAG=QSiAdm6quEZk7B90 &&
+                    export FLAG=flag{QSiAdm6quEZk7B90} &&
                     python3 /root/server.py &&
                     tail -f /dev/null"
         restart: unless-stopped
