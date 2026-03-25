@@ -216,8 +216,26 @@ cleanup_benchmark_environment() {
 
     echo "Cleaning up existing benchmark containers and orphans."
     if ! "${DC[@]}" "${compose_args[@]}" down --remove-orphans; then
-        echo "Warning: cleanup reported an error; continuing with a fresh startup attempt."
+        echo "Warning: compose down reported an error; falling back to force-remove."
     fi
+
+    # Force-remove any lingering containers that compose down missed.
+    # This handles stale containers from crashed or interrupted runs.
+    local stale
+    stale=$(docker ps -aq --filter "name=in-vitro_" --filter "name=real-world_" --filter "name=kali_master" 2>/dev/null || true)
+    if [ -n "$stale" ]; then
+        echo "Force-removing lingering benchmark containers: $stale"
+        docker rm -f $stale 2>/dev/null || true
+    fi
+
+    # Also remove containers matching the specific services we are about to start,
+    # in case they exist under a slightly different compose project name.
+    for svc in "${SERVICES[@]}"; do
+        if docker inspect "$svc" >/dev/null 2>&1; then
+            echo "Force-removing stale container: $svc"
+            docker rm -f "$svc" 2>/dev/null || true
+        fi
+    done
 }
 
 echo "Using compose command: ${DC[*]}"
